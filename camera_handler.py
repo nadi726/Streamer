@@ -2,8 +2,8 @@ import os
 import time
 import io
 import cv2
-
 from stream_handler import StreamHandler
+
 
 class CameraHandler(StreamHandler):
     def __init__(self, camera_location="/dev/video0", num_of_frames=60):
@@ -52,7 +52,6 @@ class CameraHandler(StreamHandler):
             return self.get_frame_list()
         return frame_list
     
-  
     def create_video_chunk(self, frame_list):
         """Create a video chunk from a frame list"""
         # Get the height and width of the frames (assuming all frames have the same dimensions)
@@ -73,13 +72,9 @@ class CameraHandler(StreamHandler):
         writer.release()
 
         # Get the video chunk as bytes from the in-memory VideoWriter object
-
-
         video_chunk_bytes_io.write(open("output.mp4", "rb").read())
         
         return video_chunk_bytes_io.getvalue()
-
-
 
     def quit(self):
         if self.camera_stream is not None:

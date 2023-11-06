@@ -5,7 +5,7 @@ from streamer import Streamer
 def main():
     streamer = Streamer()
     livestream_client = LiveStream(broadcast_key='um42-gd7r-hke8-xagh-dwgr')
-    streamer.add_client(livestream_client)
+    streamer.set_client(livestream_client)
     streamer.initialize()
     streamer.start_stream()
 
