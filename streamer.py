@@ -12,6 +12,7 @@ class Streamer:
     def initialize(self):
         if self.client is None:
             print("Error: No client. please set a client first")
+        
         self.initialized = True
         print("Streamer initialized.")
     
@@ -31,16 +32,16 @@ class Streamer:
                 video_chunk = self.get_video_chunk()
                 audio_chunk = self.get_audio_chunk()
 
-                if video_chunk is not None and audio_chunk is not None:
-                    try:
-                        self.client.send_video(video_chunk)
-                        self.client.send_audio(audio_chunk)
-                    except BrokenPipeError:
-                        print("Error: Broken pipe. Reconnecting...")
-                        self.client.reconnect()
-
-                else:
+                if video_chunk is None or audio_chunk is None:
                     print("Error: Video or audio chunk is None. Skipping this iteration.")
+                    continue
+
+                try:
+                    self.client.send_video(video_chunk)
+                    self.client.send_audio(audio_chunk)
+                except BrokenPipeError:
+                    print("Error: Broken pipe. Reconnecting...")
+                    self.client.reconnect()
         
         except Exception as e:
             print(f"Error: {e}")

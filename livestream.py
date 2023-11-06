@@ -34,15 +34,15 @@ class LiveStream(StreamClient):
                 # Open the subprocess with stdin and stderr pipes
                 self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
-                if self._connection_is_alive():
-                    break
-                else:
-                    return self.reconnect()
             except Exception as e:
                 print(f"Error starting ffmpeg process: {e}")
-            
-            # Sleep for a short duration before the next check
-            time.sleep(5)
+
+            if self._connection_is_alive():
+                break
+            else:
+                # Sleep for a short duration before retrying
+                time.sleep(5)
+                return self.reconnect()
 
     def disconnect(self):
         # Terminate the ffmpeg process
@@ -53,11 +53,7 @@ class LiveStream(StreamClient):
             print(f"Error terminating ffmpeg process: {e}")
 
     def reconnect(self):
-        # Close the existing ffmpeg process
-        if self.process.poll() is None:
-            self.process.terminate()
-
-        # Reconnect and start a new ffmpeg process
+        self.disconnect()
         self.connect()
 
     def send_video(self, video_chunk):
