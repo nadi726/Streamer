@@ -45,7 +45,7 @@ class LiveStream(StreamClient):
                 return self.reconnect()
 
     def disconnect(self):
-        # Terminate the ffmpeg process
+        """Terminate the ffmpeg process"""
         try:
             if self.process.poll() is None:
                 self.process.terminate()
