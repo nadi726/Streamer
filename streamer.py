@@ -1,70 +1,86 @@
-from camera_handler import CameraHandler
-from audio_handler import AudioHandler
+import socket
+import subprocess
+import time
+from events import AudioListener, FrameListener
 
 
-class Streamer:
-    def __init__(self):
-        self.client = None
-        self.camera_handler = CameraHandler()
-        self.audio_handler = AudioHandler()
-        self.initialized = False
+class Streamer(FrameListener, AudioListener):
+    YOUTUBE_ENDPOINT = "rtmp://a.rtmp.youtube.com/live2"
+    lock=False
     
-    def initialize(self):
-        if self.client is None:
-            print("Error: No client. please set a client first")
-        
-        self.initialized = True
-        print("Streamer initialized.")
-    
-    def set_client(self, client):
-        if self.initialized:
-            self.cleanup()
-        self.client = client
-    
-    def start_stream(self):
-        if not self.initialized:
-            print("Error: Streamer not initialized. call initialize() method first")
-            return
-        
+    def __init__(self, broadcast_key):
+        self.stream_url = f"{self.YOUTUBE_ENDPOINT}/{broadcast_key}"
+        self.connect()
+
+    def connect(self):
+        command = [
+            "ffmpeg",
+            "-re",
+            "-i", "pipe:0",  # Read video input from stdin
+            "-ar", "44100",
+            "-ac", "1",
+            "-f", "s16le",
+            "-i", "pipe:3",  # Read audio input from stdin
+            "-c:v", "libx264",
+            "-b:v", "1500k",
+            "-pix_fmt", "yuv420p",
+            "-preset", "ultrafast",
+            "-g", "120",  # Set keyframe interval to 4 seconds (assuming 30 frames/second)
+            "-f", "flv",
+            self.stream_url
+        ]
+        while True:
+            try:
+                # Open the subprocess with stdin and stderr pipes
+                self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            except Exception as e:
+                print(f"Error starting ffmpeg process: {e}")
+
+            if self._connection_is_alive():
+                break
+            else:
+                # Sleep for a short duration before retrying
+                time.sleep(5)
+                return self.reconnect()
+
+    def disconnect(self):
+        """Terminate the ffmpeg process"""
         try:
-            streaming = True
-            while streaming:
-                video_chunk = self.get_video_chunk()
-                audio_chunk = self.get_audio_chunk()
-
-                if video_chunk is None or audio_chunk is None:
-                    print("Error: Video or audio chunk is None. Skipping this iteration.")
-                    continue
-
-                try:
-                    self.client.send_video(video_chunk)
-                    self.client.send_audio(audio_chunk)
-                except BrokenPipeError:
-                    print("Error: Broken pipe. Reconnecting...")
-                    self.client.reconnect()
-        
+            if self.process.poll() is None:
+                self.process.terminate()
         except Exception as e:
-            print(f"Error: {e}")
-        finally:
-            self.cleanup()
-        
-    def get_video_chunk(self):
-        video_chunk = self.camera_handler.get()
-        if video_chunk == b"":
-            print("null")
-            return None
-        return video_chunk
-    
-    def get_audio_chunk(self):
-        audio_chunk = self.audio_handler.get()
-        if audio_chunk == b"":
-            print("null")
-            return None
-        return audio_chunk
+            print(f"Error terminating ffmpeg process: {e}")
 
-    def cleanup(self):
-        if self.initialized:
-            self.camera_handler.quit()
-            self.audio_handler.quit()
-            self.client.disconnect()
-            self.initialized = False
+    def reconnect(self):   
+        self.disconnect()
+        self.connect()
+           
+
+
+    def on_frame(self,data):
+        try:
+            self.process.stdin.write(data)
+            self.process.stdin.flush()  # Ensure data is sent immediately
+          
+        except BrokenPipeError:
+            print("-On video- Error: Broken pipe. Reconnecting...")
+            self.reconnect()
+    
+    def on_audio(self, data):
+        try:
+            self.process.stdin.write(data)
+            self.process.stdin.flush()  # Ensure audio data is sent immediately
+        except BrokenPipeError:
+            print("-On audio- Error: Broken pipe. Reconnecting...")
+            self.reconnect()
+            
+    def _connection_is_alive(self):
+        try:
+            sock = socket.create_connection(("a.rtmp.youtube.com", 1935), timeout=10)
+            sock.sendall(b" ")
+            sock.close()
+            return True
+        except Exception:
+            print("Error: Connection lost. Reconnecting...")
+            return False

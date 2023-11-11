@@ -1,13 +1,22 @@
-from livestream import LiveStream
+
+from camera_handler import CameraHandler
+from audio_handler import AudioHandler
+from events import EventEmitter
 from streamer import Streamer
+from wav_writer import WavWriter
 
 
 def main():
-    streamer = Streamer()
-    livestream_client = LiveStream(broadcast_key='um42-gd7r-hke8-xagh-dwgr')
-    streamer.set_client(livestream_client)
-    streamer.initialize()
-    streamer.start_stream()
+    stream_instance = Streamer(broadcast_key='um42-gd7r-hke8-xagh-dwgr')
+    audio_file = WavWriter()
+    EventEmitter.add_frame_listener(stream_instance)
+    EventEmitter.add_audio_listener(stream_instance)
+    EventEmitter.add_audio_listener(audio_file)
+
+    camera_handler = CameraHandler()
+    camera_handler.start_thread()
+    audio_handler = AudioHandler()
+    audio_handler.start_thread()
 
 
 if __name__ == "__main__":
