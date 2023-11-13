@@ -1,11 +1,14 @@
 """A basic implementation of an event system with two listener interfaces: FrameListener and AudioListener."""
 
+from abc import ABC, abstractmethod
 
-class FrameListener:
+class FrameListener(ABC):
+    @abstractmethod
     def on_frame(self, data):
         pass
 
-class AudioListener:
+class AudioListener(ABC):
+    @abstractmethod
     def on_audio(self, data):
         pass
 
@@ -30,7 +33,6 @@ class EventEmitter:
     @classmethod
     def remove_audio_listener(cls, listener):
         cls.audio_listeners.remove(listener)
-    
     @classmethod
     def trigger_audio_event(cls, data):
         for listener in cls.audio_listeners:

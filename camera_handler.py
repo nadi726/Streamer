@@ -17,9 +17,9 @@ class CameraHandler:
         self.thread = threading.Thread(target=self.get_frame_thread)
                 
     def get_frame_thread(self):
-        while(True):
+        while True:
             ret, frame = self.camera_stream.read()
-            # Encode the frame as JPEG image (you can choose other formats like PNG as well)\
+            # Encode the frame as JPEG image (you can choose other formats like PNG as well)
             if ret:
                 retval, buffer = cv2.imencode('.jpg', frame)
 
@@ -35,5 +35,5 @@ class CameraHandler:
         self.thread.start()
 
 
-   
-CameraHandler()
+if __name__ == "__main__":
+    handler = CameraHandler()

@@ -14,10 +14,9 @@ def main():
     EventEmitter.add_audio_listener(audio_file)
 
     camera_handler = CameraHandler()
-    camera_handler.start_thread()
     audio_handler = AudioHandler()
+    camera_handler.start_thread()
     audio_handler.start_thread()
-
 
 if __name__ == "__main__":
     main()

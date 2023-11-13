@@ -6,10 +6,10 @@ from events import AudioListener, FrameListener
 
 class Streamer(FrameListener, AudioListener):
     YOUTUBE_ENDPOINT = "rtmp://a.rtmp.youtube.com/live2"
-    lock=False
     
     def __init__(self, broadcast_key):
         self.stream_url = f"{self.YOUTUBE_ENDPOINT}/{broadcast_key}"
+        self.process = None
         self.connect()
 
     def connect(self):
@@ -56,23 +56,27 @@ class Streamer(FrameListener, AudioListener):
         self.disconnect()
         self.connect()
            
-
-
     def on_frame(self,data):
+        if self.process is None or self.process.poll() is not None:
+            return None
+        
         try:
             self.process.stdin.write(data)
             self.process.stdin.flush()  # Ensure data is sent immediately
           
-        except BrokenPipeError:
-            print("-On video- Error: Broken pipe. Reconnecting...")
+        except BrokenPipeError as e:
+            print(f"-On frame- Error: Broken pipe. Reconnecting... ({e})")
             self.reconnect()
-    
+
     def on_audio(self, data):
+        if self.process is None or self.process.poll() is not None:
+            return None
+        
         try:
             self.process.stdin.write(data)
             self.process.stdin.flush()  # Ensure audio data is sent immediately
-        except BrokenPipeError:
-            print("-On audio- Error: Broken pipe. Reconnecting...")
+        except BrokenPipeError as e:
+            print(f"-On audio- Error: Broken pipe. Reconnecting... ({e})")
             self.reconnect()
             
     def _connection_is_alive(self):

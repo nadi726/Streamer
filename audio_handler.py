@@ -1,8 +1,7 @@
 import sounddevice as sd
-from events import EventEmitter
 import threading
 import numpy as np
-
+from events import EventEmitter
 
 class AudioHandler:
     # Constants for audio settings
