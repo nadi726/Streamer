@@ -15,22 +15,17 @@ class AudioHandler:
             channels=self.CHANNELS,
             samplerate=self.RATE,
             blocksize=self.CHUNK,
-            callback=self.callback,
             dtype=self.FORMAT,
             device=3  # Adjust this to the appropriate input device index
         )
-        self.thread = threading.Thread(target=self.get_audio_thread)
-    
-    def callback(self, indata, frames, time, status):
-        if status:
-            print(f"Error in callback: {status}")
-        if frames > 0:
-            data = indata.tobytes()
-            EventEmitter.trigger_audio_event(data)
+        self.thread = threading.Thread(target=self.get_audio_thread)    
 
     def get_audio_thread(self):
-        with self.audio_stream:
-            sd.sleep(1000000)  # Use a long sleep to keep the stream open
+        while True:
+            data, overflowed = self.audio_stream.read(self.CHUNK)
+            if not overflowed:
+                EventEmitter.trigger_audio_event(data.tobytes())
 
     def start_thread(self):
+        self.audio_stream.start()
         self.thread.start()
