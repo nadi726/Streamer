@@ -58,7 +58,7 @@ class Streamer(FrameListener, AudioListener):
            
     def on_frame(self,data):
         if self.process is None or self.process.poll() is not None:
-            return None
+            self.connect()
         
         try:
             self.process.stdin.write(data)
@@ -70,10 +70,11 @@ class Streamer(FrameListener, AudioListener):
 
     def on_audio(self, data):
         if self.process is None or self.process.poll() is not None:
-            return None
+            self.connect()
         
         try:
-            self.process.stdin.write(data)
+  
+            self.process.stdin.writable(data)
             self.process.stdin.flush()  # Ensure audio data is sent immediately
         except BrokenPipeError as e:
             print(f"-On audio- Error: Broken pipe. Reconnecting... ({e})")
@@ -87,4 +88,4 @@ class Streamer(FrameListener, AudioListener):
             return True
         except Exception:
             print("Error: Connection lost. Reconnecting...")
-            return False
+            return False()
